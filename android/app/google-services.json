@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "287135393502",
+    "firebase_url": "https://robotreception-c2a36-default-rtdb.firebaseio.com",
+    "project_id": "robotreception-c2a36",
+    "storage_bucket": "robotreception-c2a36.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:287135393502:android:89e15e870397ea154f044f",
+        "android_client_info": {
+          "package_name": "com.example.adminusers"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCe-P4FMULGgbF-CFzhLSAc6pIkOL9RNUs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:287135393502:android:d31648a8b4917d0f4f044f",
+        "android_client_info": {
+          "package_name": "com.example.chatnous"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCe-P4FMULGgbF-CFzhLSAc6pIkOL9RNUs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
