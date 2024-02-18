@@ -23,6 +23,8 @@ class OnBoardingScreen extends StatelessWidget {
             liquidController: obcontroller.contrller,
             enableSideReveal: true,
           ),
+          // if(widget.model.num==4)
+
           Positioned(
               bottom: 60.0,
               child: OutlinedButton(

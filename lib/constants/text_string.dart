@@ -1,13 +1,13 @@
 const String TAppName = "روبوت نوس";
 const String tAppTagline = "اهلا بك في روبوت المحادثة الذكي";
-const String title1 = "جامعة الرازي";
-const String title2 = "الاجابة على اي اسئلة ";
+const String title1 = "اهلا وسهلا ";
+const String title2 = "ماذا يقدم نوس";
 const String title3 = "استمتع بالتحدث معى نوس";
 const String title4 = "حدد اهتمامك في اي جهة ";
 const String subtitle1 =
-    "يمكن لربوت المحادثة نوس الاجابة عن جميع الاسئلة والاستفسار عن جامعة الرازي ";
+    "انا  نوس ربوت محادثة متخصص بخدمة العملاء بالذكاء الاصطناعي  ";
 const String subtitle2 =
-    "ايظا يمكن لروبوت المحادثة نوس الاجابة على جميع الاسئلة خارج اطار الرازي";
+    "يمكنني الاجابة عن الاستفسارات الخاص بالعملاء بطريقة ابداعية وذكية ";
 const String subtitle3 =
     "هيا لنبدا رحلتنا في كوكب نوس ونتعرف على جامعة الرازي وغيرها ";
 const String subtitle4 =

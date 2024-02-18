@@ -5,10 +5,12 @@ import 'package:chromadb/chromadb.dart';
 import 'package:dart_openai/dart_openai.dart' as openai;
 
 import '../global/common/toast.dart';
+import '../init_Firebase.dart';
 
 String templatechat = '';
 
 Future<Map<String, dynamic>> readData() async {
+
   final prefs = await SharedPreferences.getInstance();
   String? idcom=await prefs.getString('company_id');
   DatabaseReference databaseRef = FirebaseDatabase.instance.ref('APIS/$idcom');
@@ -27,6 +29,7 @@ Future<Map<String, dynamic>> readData() async {
 }
 
 Future<String?> DataMatching(String quary) async {
+  getCompanyNamesAndIds();
   var data = await readData();
   var embeddurl =data['Embbeding']['baseUrl'];
   var CollectionName =data['Embbeding']['CollectionName'];

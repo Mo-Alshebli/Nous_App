@@ -90,3 +90,58 @@ class logout extends StatelessWidget {
     }
   }
 }
+
+
+class ListViewPro extends StatelessWidget {
+  final String title;
+  final Icon icon;
+  final Map<String, String> companyNamesAndIds; // Changed to Map
+  final String? selectedCompanyName; // Nullable to handle initial state
+  final Function(String?, String?) onChanged; // Adjusted to pass company name and ID
+
+  const ListViewPro({
+    required this.title,
+    required this.icon,
+    required this.companyNamesAndIds,
+    this.selectedCompanyName,
+    required this.onChanged,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(10),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: ListTile(
+          tileColor: const Color.fromARGB(39, 33, 149, 243),
+          contentPadding: const EdgeInsets.fromLTRB(40, 0, 40, 0),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          leading: icon, // Use the passed Icon
+          title: DropdownButton<String>(
+            value: selectedCompanyName,
+            icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
+            elevation: 16,
+            style: const TextStyle(color: Colors.black),
+            onChanged: (String? newValue) {
+              onChanged(newValue, companyNamesAndIds[newValue]);
+            },
+            items: companyNamesAndIds.entries
+                .map<DropdownMenuItem<String>>((MapEntry<String, String> entry) {
+              return DropdownMenuItem<String>(
+                value: entry.key,
+                child: Text(
+                  entry.key,
+                  textDirection: TextDirection.rtl,
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+}

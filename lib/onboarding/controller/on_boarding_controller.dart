@@ -61,22 +61,16 @@ class OnBoardingController extends GetxController {
 
 
   Future<void> animateToNextSlid(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    String? idcom=await prefs.getString('company_id');
-    print("=======================");
-    print(idcom);
     int nextPage = contrller.currentPage + 1;
 
     print(nextPage);
-    if (nextPage == 4 && idcom!=null) {
+    if (nextPage == 4  ) {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setBool('onboardingShown', true);
 
       // Use Navigator to navigate to the LoginScreen
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MyApp(onboardingShown: true)));
-    } else if (nextPage == 4 && idcom==null){
-      showToast(message: "رجاء قم بادخال الجهة المراد الاستفسار عنها");
-    } else {
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => MyApp(onboardingShown: true)));}
+     else {
       contrller.animateToPage(page: nextPage);
     }
   }
