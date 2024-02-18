@@ -1,8 +1,3 @@
-
-import 'dart:convert';
-import 'package:langchain/langchain.dart';
-import 'package:langchain_openai/langchain_openai.dart';
-import 'package:pinecone/pinecone.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -30,70 +25,6 @@ Future<Map<String, dynamic>> readData() async {
     };
   }
 }
-
-//
-// class FindMatching {
-//
-//
-//   Future<String> getMatching(String arguments) async {
-//     var data = await readData();
-//
-//
-//     final client = PineconeClient(
-//       apiKey: data['Embbeding']['API_embedded'],
-//     );
-//     final embeddings = OpenAIEmbeddings(
-//         apiKey:data['Openai_API']['api'] );
-//     try {
-//       final res = await embeddings.embedQuery(arguments);
-//
-//       QueryResponse queryResponse = await client.queryVectors(
-//         indexName: data['Embbeding']['indexname'],
-//         projectId: data['Embbeding']['proid'],
-//         environment: data['Embbeding']['env'],
-//         request: QueryRequest(
-//           vector: res,
-//         ),
-//       );
-//       print("====================kkk======");
-//       print(queryResponse.matches[0].id);
-//       return gettext([
-//         queryResponse.matches[0].id,
-//         queryResponse.matches[1].id,
-//
-//       ]);
-//     } catch (e) {
-//       showToast(message: 'Error No Internet :$e');
-//       return 'Error'; // Handle the error appropriately
-//     }
-//   }
-//
-//   Future<String> gettext(var id) async {
-//     var data = await readData();
-//
-//     final client = PineconeClient(
-//         apiKey: data['Embbeding']['API_embedded']
-//     );
-//
-//     try {
-//       FetchResponse fetchResponse = await client.fetchVectors(
-//         indexName: data['Embbeding']['indexname'],
-//         projectId: data['Embbeding']['proid'],
-//         environment: data['Embbeding']['env'],
-//         ids: id,
-//       );
-//       var res_id = fetchResponse.vectors.keys.toList();
-//       String text = '';
-//       for (int i = 0; i < res_id.length; i++) {
-//         text += utf8.decode(
-//             fetchResponse.vectors[res_id[i]]?.metadata?['text'].codeUnits);
-//       }
-//       return text;
-//     } catch (e) {
-//       showToast(message: 'Error No Internet : $e');
-//       return 'Error'; // Handle the error appropriately
-//     }
-//   }
 
 Future<String?> DataMatching(String quary) async {
   var data = await readData();
