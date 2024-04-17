@@ -1,6 +1,5 @@
-
 import 'package:flutter/material.dart';
-
+import 'package:idea_chatbot/DashBord/style.dart';
 import '../DashBoard_widget/navBar_ListViwe_Widget.dart';
 import '../DataBase/DataBase.dart';
 import '../HomeScreen.dart';
@@ -16,6 +15,11 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
   @override
   void initState() {
     super.initState();
+    refreshConversations();
+  }
+
+  void refreshConversations() {
+    // Update conversationsData with the latest data from the database
     conversationsData = _fetchUniqueConversation();
   }
 
@@ -34,30 +38,44 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
         }
       }
 
-      return uniqueConversations.values.toList();
+      // Convert the map to a list of conversations
+      var conversationsList = uniqueConversations.values.toList();
+
+      // Sort the list in descending order of conversation IDs (assuming higher IDs are newer)
+      conversationsList.sort((a, b) => b['id'].compareTo(a['id']));
+
+      return conversationsList;
     } catch (e) {
       // Handle any errors here
       print('Error fetching conversations: $e');
       return [];
     }
   }
+
+  void _deleteConversation(int conversationId) async {
+    await DatabaseHelper.instance.deleteConversation(conversationId);
+    refreshConversations(); // Refresh the list of conversations
+    setState(() {}); // Trigger a rebuild to update the UI
+  }
+
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
+      backgroundColor: kLightDarkColor,
       appBar: AppBar(
+        backgroundColor: kLightDarkColor,
         title: Center(
-          child: Text('قائمة المحادثات السابقة'),
+          child: Text('قائمة المحادثات السابقة', style: TextStyle(color: kOrangeColor)),
         ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: kOrangeColor),
           onPressed: () async {
             DatabaseHelper dbHelper = DatabaseHelper.instance;
             int? latestConversationId = await dbHelper.getLatestConversationId();
             // Navigate back to the previous screen
             Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
-                    builder: (context) => ChatterScreen(conversationId:latestConversationId)));          },
+                    builder: (context) => ChatterScreen(conversationId:latestConversationId)));                 },
         ),
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
@@ -65,7 +83,6 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             if (snapshot.hasError) {
-              // Handle the error case
               return Center(child: Text('Error: ${snapshot.error}'));
             } else if (snapshot.hasData && snapshot.data!.isNotEmpty) {
               return ListView.builder(
@@ -76,25 +93,24 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
                   final firstMessage = data['firstMessage'];
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: listViewpro(
-                      icon: Icon(Icons.message, color: Colors.blue),
-                      title: 'المحادثة $id - $firstMessage',
+                    child: ListViewpro(
+                      icon: Icon(Icons.message, color: kOrangeColor),
+                      title: '$firstMessage',
                       onTap: () {
-
-                          Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                  builder: (context) => ChatterScreen(conversationId: id)));
-                      },
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => ChatterScreen(conversationId: id), // Assuming ChatterScreen is defined elsewhere
+                          ),
+                        );                      },
+                      onDelete: () => _deleteConversation(id),
                     ),
                   );
                 },
               );
             } else {
-              // Handle the case when there are no conversations
               return Center(child: Text('No Conversations Found'));
             }
           } else {
-            // Show a loading indicator while waiting for the data
             return Center(child: CircularProgressIndicator());
           }
         },

@@ -25,13 +25,15 @@ class DatabaseHelper {
     _database = await _initDatabase();
     return _database!;
   }
-
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), _databaseName);
     return await openDatabase(path,
         version: _databaseVersion,
         onCreate: _onCreate,
-        onUpgrade: _onUpgrade);
+        onUpgrade: _onUpgrade,
+        onOpen: (db) {
+          db.execute("PRAGMA foreign_keys = ON");
+        });
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -63,13 +65,13 @@ class DatabaseHelper {
   }
 
 
-          Future<void> deleteMessagePair(String userMessage, String chatbotMessage, int conversationId) async {
-        try {
-          Database db = await database;
-          await db.delete(
-            tableMessages,
-            where: '(text = ? OR text = ?) AND $columnConversationId = ?',
-            whereArgs: [userMessage, chatbotMessage, conversationId],
+  Future<void> deleteMessagePair(String userMessage, String chatbotMessage, int conversationId) async {
+    try {
+      Database db = await database;
+      await db.delete(
+        tableMessages,
+        where: '($columnText = ? OR $columnText = ?) AND $columnConversationId = ?',
+        whereArgs: [userMessage, chatbotMessage, conversationId],
       );
     } catch (e) {
       print('Error in deleteMessagePair: $e');
@@ -120,6 +122,29 @@ class DatabaseHelper {
     return null;
   }
 
+  Future<void> deleteConversation(int conversationId) async {
+    Database db = await database;
+    try {
+      // First, manually delete messages associated with the conversation
+      await db.delete(
+        tableMessages,
+        where: '$columnConversationId = ?',
+        whereArgs: [conversationId],
+      );
+
+      // Then, delete the conversation itself
+      await db.delete(
+        tableConversations,
+        where: '$columnConversationId = ?',
+        whereArgs: [conversationId],
+      );
+
+      print("Deleted conversation ID: $conversationId and all associated messages.");
+    } catch (e) {
+      print('Error deleting conversation: $e');
+      throw e; // Allow handling it outside this function
+    }
+  }
 
   Future<int> createNewConversation([int? id]) async {
     Database db = await database;
@@ -142,6 +167,7 @@ class DatabaseHelper {
     Database db = await database;
     return await db.delete(tableMessages);
   }
+
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (newVersion > oldVersion) {

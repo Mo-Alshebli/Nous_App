@@ -12,8 +12,6 @@ class FirebaseAuthService {
     try {
       UserCredential credential =await _auth.createUserWithEmailAndPassword(email: email, password: password);
       await prefs.setString('Uid', credential.user!.uid);
-      print("========================g================");
-      print(credential.user!.uid);
 
       return credential.user;
 

@@ -1,32 +1,21 @@
-
-
-import 'package:firebase_auth/firebase_auth.dart';
+import 'ReaitimeData.dart';
+import 'style.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:sqflite/sqflite.dart';
 import '../constants/image_string.dart';
-import '../global/common/toast.dart';
-import 'DataBase/DataBase.dart'as db1;
-import 'DataBase/DataBase.dart';
-import 'chatbot.dart';
-import 'navBar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dart_openai/dart_openai.dart';
 import 'dart:async';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
 
 class ChatStream extends StatelessWidget {
   final List<Map<String, String>> messages;
   final Function(String) onDeleteMessage;
-  final FlutterTts flutterTts; // Add this
+  final FlutterTts flutterTts;
 
   ChatStream({
     required this.messages,
     required this.onDeleteMessage,
-    required this.flutterTts, // Add this
-
+    required this.flutterTts,
   });
 
   @override
@@ -34,16 +23,14 @@ class ChatStream extends StatelessWidget {
     return Expanded(
       child: ListView(
         reverse: true,
-        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
         children: messages.reversed.map((message) {
           return MessageBubble(
-            msgText: message['text']!,
-            msgSender: message['sender']!,
+            msgText: message['text'] ?? '', // Providing a default value to avoid null
+            msgSender: message['sender'] ?? '', // Providing a default value to avoid null
             onDelete: onDeleteMessage,
-            flutterTts: flutterTts, // Pass the flutterTts instance
-
+            flutterTts: flutterTts,
           );
-
         }).toList(),
       ),
     );
@@ -54,13 +41,13 @@ class MessageBubble extends StatefulWidget {
   final String msgText;
   final String msgSender;
   final Function(String) onDelete;
-  final FlutterTts flutterTts; // Add this
+  final FlutterTts flutterTts;
 
   MessageBubble({
     required this.msgText,
     required this.msgSender,
     required this.onDelete,
-    required this.flutterTts, // Add this
+    required this.flutterTts,
   });
 
   @override
@@ -68,45 +55,60 @@ class MessageBubble extends StatefulWidget {
 }
 
 class _MessageBubbleState extends State<MessageBubble> {
-  bool _isListening=false;
-  String _selectedVoice = "es-us-x-sfb-local"; // Default voice
+  bool _isListening = false;
 
-  final currentUser = FirebaseAuth.instance.currentUser;
+  @override
+  void initState() {
+    super.initState();
+    _initializeTts();
+  }
 
+  Future<void> _initializeTts() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? lang = prefs.getString('language') ;
+
+    if (lang == null) {
+      // Handle null case, maybe set a default value or show an error message
+      lang = 'ar-xa-x-ard-local'; // Example: defaulting to a certain language
+    }
+    await widget.flutterTts.setLanguage("ar");
+    await widget.flutterTts.setVoice({"name": lang!, "locale": "ar"});
+  }
+  // Function to show bottom sheet for message options
   void _showBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent, // Make modal background transparent
+      backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
         return SafeArea(
           child: Container(
-            margin: const EdgeInsets.all(58.0), // Margin for the rounded corners
+            margin: const EdgeInsets.all(24.0),
             decoration: BoxDecoration(
-              color: Colors.white, // Background color of the bottom sheet
-              borderRadius: BorderRadius.circular(25.0), // Rounded corners
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(25.0),
               boxShadow: [
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.5),
-                  spreadRadius: 15,
-                  blurRadius: 17,
-                  offset: const Offset(0, 3), // changes position of shadow
+                  spreadRadius: 3,
+                  blurRadius: 7,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
             child: Wrap(
               children: <Widget>[
                 ListTile(
-                  leading: const Icon(Icons.copy, color: Colors.blue), // Custom icon color
-                  title: const Text('نسخ', style: TextStyle(color: Colors.black)), // Custom text style
+                  leading: const Icon(Icons.copy, color: Colors.blue),
+                  title: const Text('نـسـخ', style: TextStyle(color: Colors.black)),
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: widget.msgText));
                     Navigator.pop(context);
                   },
                 ),
-                const Divider(), // Divider for a better visual separation
+                const Divider(),
                 ListTile(
-                  leading: const Icon(Icons.delete, color: Colors.red), // Custom icon color
-                  title: const Text('حذف ', style: TextStyle(color: Colors.black)), // Custom text style
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('حــذف ', style: TextStyle(color: Colors.black)),
                   onTap: () {
                     widget.onDelete(widget.msgText);
                     Navigator.pop(context);
@@ -119,111 +121,137 @@ class _MessageBubbleState extends State<MessageBubble> {
       },
     );
   }
+
+  // Function to read the message aloud
   Future<void> _readMessage(String text) async {
 
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? lang = await prefs.getString('lang');
-    print("====================");
-    print(lang);
     if (text.isNotEmpty) {
-
-      await widget.flutterTts.setLanguage("ar");
-      await widget.flutterTts.setVoice({"name": lang!, "locale": "ar"});
-
-      if (mounted) {
-        setState(() => _isListening = false);
-      }
-      await widget.flutterTts.setSpeechRate(0.5);
-      setState(() => _isListening = true); // Start speaking
+      setState(() => _isListening = true);
+      await widget.flutterTts.setSpeechRate(0.5);// Providing a default value
 
       await widget.flutterTts.speak(text);
-
-      // After speaking, set _isListening to false
 
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
+    return Directionality(
+        textDirection: TextDirection.ltr,
+        child:Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
-        crossAxisAlignment: (widget.msgSender == "User")
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
+
           Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: widget.msgSender == "User" ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              Flexible(
-                child: Material(
-                  borderRadius: BorderRadius.circular(8),
-                  elevation: 10,
-                  color: (widget.msgSender == "User")
-                      ? Colors.blue
-                      : Colors.white,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-                    child: Text(
-                      widget.msgText,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: (widget.msgSender =="User")
-                            ? Colors.white
-                            : Colors.black,
+              if (widget.msgSender != "User")
+                Column(
+                  children: [
+
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: CircleAvatar(
+                        backgroundImage: AssetImage(icon), // Add path to your bot icon
+                        radius: 16,
                       ),
+                    ),
+                    SizedBox(height: 10,),
+                    Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Container(
+                        margin: const EdgeInsets.only(left: 0),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (_isListening) {
+                              // If already listening (speaking), then stop
+                              widget.flutterTts.stop();
+                              setState(() => _isListening = false);
+                            } else {
+                              // If not listening, start reading the message
+                              _readMessage(widget.msgText);
+                            }
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _isListening ? Colors.red.withOpacity(0.3) : Colors.grey.withOpacity(0.3),
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            child: Icon(
+                              _isListening ? Icons.voice_over_off : Icons.record_voice_over,
+                              color: _isListening ? Colors.red : kGreen,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  ],
+                ),
+              Flexible(
+                child: GestureDetector(
+                  onLongPress: () => _showBottomSheet(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(8.0),
+                    decoration: BoxDecoration(
+                      color: widget.msgSender == "User" ? kBlueDarkColo : kGreen,
+                      borderRadius: BorderRadius.only(
+                        topLeft: widget.msgSender == "User" ? Radius.circular(12.0) : Radius.circular(0),
+                        topRight: widget.msgSender != "User" ? Radius.circular(12.0) : Radius.circular(0),
+                        bottomLeft: const Radius.circular(12.0),
+                        bottomRight: const Radius.circular(12.0),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+
+                        if (widget.msgSender != "User")
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4.0),
+                            child: Text(
+                              "Nous",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+
+                                color: kBlueDarkColor,
+                              ),
+                            ),
+                          ),
+
+                        Text(
+                          widget.msgText,
+                          textDirection: TextDirection.rtl,
+
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: 'Lama',// Set the font family to Dubai
+                            color: widget.msgSender == "User" ? Colors.white70 : Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-              if (widget.msgSender !="User")
-                Row(
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(left: 0),
-                      child: IconButton(
-                        icon: Icon(
-                            _isListening ? Icons.mic : Icons.mic_none, // Mic icon if listening, else mic off icon
-                            color: _isListening ? Colors.red : Colors.black, // Red when listening, otherwise blue
-
-
-                            size: 20),
-                        onPressed: () {
-                          if (_isListening) {
-                            // If already listening (speaking), then stop
-                            widget.flutterTts.stop();
-                            setState(() => _isListening = false);
-                          } else {
-                            // If not listening, start reading the message
-                            _readMessage(widget.msgText);
-
-                          }
-                        },
-
-                      ),
-                    ),
-                    Container(
-                      margin: const EdgeInsets.only(left: 0),
-                      child: IconButton(
-                        icon: const Icon(Icons.more_vert, size: 20),
-                        onPressed: () => _showBottomSheet(context),
-                      ),
-                    ),
-                  ],
-                ),
             ],
           ),
+
         ],
       ),
-    );
-
+    ),);
   }
+
   @override
   void dispose() {
-    widget.flutterTts.stop(); // Stop any ongoing speech synthesis
+    widget.flutterTts.stop();
     super.dispose();
   }
 }

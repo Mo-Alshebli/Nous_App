@@ -10,7 +10,6 @@ Future<Map<String, String>> getCompanyNamesAndIds() async {
     Map<dynamic, dynamic> companies = snapshot.value as Map<dynamic, dynamic>;
     companies.forEach((key, value) {
       if (value is Map ) {
-        print("=======================fjgjh");
         print(value);
       }
     });

@@ -3,14 +3,17 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
+import '../../DashBord/style.dart';
+
+
 void showToast({required String message}){
   Fluttertoast.showToast(
       msg: message,
       toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-      timeInSecForIosWeb: 5,
-      backgroundColor: Colors.blue,
-      textColor: Colors.white,
+      gravity: ToastGravity.TOP,
+      timeInSecForIosWeb: 10,
+      backgroundColor: kGreen,
+      textColor: Colors.black,
       fontSize: 16.0
   );
 }

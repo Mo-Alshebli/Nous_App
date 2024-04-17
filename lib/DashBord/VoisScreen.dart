@@ -6,12 +6,14 @@ import 'DataBase/DataBase.dart';
 import 'HomeScreen.dart';
 import 'ReaitimeData.dart';
 import 'chatbot.dart';
-import 'navBar.dart';
+import 'loading.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dart_openai/dart_openai.dart';
 import 'dart:async';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
+
+import 'style.dart';
 
 
 class VoicChat extends StatefulWidget {
@@ -21,9 +23,11 @@ class VoicChat extends StatefulWidget {
   _VoicChatScreenState createState() => _VoicChatScreenState();
 }
 
+
 class _VoicChatScreenState extends State<VoicChat> {
   bool showSecondAnimation = false; // State variable for second animation visibility
   bool mic=true;
+  bool load=false;
   late stt.SpeechToText _speech;
   late FlutterTts flutterTts;
   bool _isListening = false;
@@ -35,6 +39,7 @@ class _VoicChatScreenState extends State<VoicChat> {
   bool isProcessing = false;
   StreamSubscription? chatStreamSubscription;
   String _text = '';
+  bool _StopStream = false;
 
   @override
   void initState() {
@@ -42,12 +47,11 @@ class _VoicChatScreenState extends State<VoicChat> {
     _speech = stt.SpeechToText();
     flutterTts = FlutterTts();
   }
-
   void _listen() async {
     if (!_isListening) {
       bool available = await _speech.initialize(
-        onStatus: (val) => print('onStatus: $val'),
-        onError: (val) => print('onError: $val'),
+        onStatus: (val) => showToast(message: 'onStatus: $val'),
+        onError: (val) => showToast(message: 'onError: $val'),
       );
       if (available) {
         setState(() => _isListening = true);
@@ -68,21 +72,19 @@ class _VoicChatScreenState extends State<VoicChat> {
       _stopListening();
     }
   }
-
-
   void _stopListening() {
     _speech.stop();
     setState(() {
-        _isListening = false;});
+        _isListening = false;
+       });
   }
-  void setupTts() async {
-
-  }
-
   Future<void> addMessageWithDelay(String text,usertext) async {
     var data = await readData();
     if (text.trim().isEmpty) return;
-    setState(() => isProcessing = true); // Start streaming (show stop icon)
+    setState(() {
+      isProcessing = true;
+      _StopStream=true;
+    } ); // Start streaming (show stop icon)
     var userMessage = OpenAIChatCompletionChoiceMessageModel(
       content: [
         OpenAIChatCompletionChoiceMessageContentItemModel.text(text),
@@ -99,8 +101,8 @@ class _VoicChatScreenState extends State<VoicChat> {
         final content = choices.first.delta.content;
         if (content != null) {
           for (var item in content) {
-            if (item.text != null) {
-              for (var char in item.text!.split('')) {
+            if (item?.text != null) {
+              for (var char in item!.text!.split('')) {
                 buffer += char;
                 if (char.trim().isEmpty) {
                   if (buffer.isNotEmpty) {
@@ -121,7 +123,7 @@ class _VoicChatScreenState extends State<VoicChat> {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       setState(() {
         lang =prefs.getString('lang')!;
-
+        _StopStream=true;
       });
 
       // Your existing setup
@@ -131,8 +133,6 @@ class _VoicChatScreenState extends State<VoicChat> {
       setState(() {
         colltext+=buffer;
       });
-      print("-=-=-=-=-==-=-==-=-");
-      print(colltext);
       if (colltext.isNotEmpty) {
         int humantokens=countTokens(text);
         await writeDataRealTime(usertext, colltext,humantokens);
@@ -150,7 +150,6 @@ class _VoicChatScreenState extends State<VoicChat> {
           mic=!mic;
 
         });
-print("====================================");
         // Add any other actions you want to perform after speaking here
       });
       setState(() {
@@ -168,7 +167,6 @@ print("====================================");
 
     });
   }
-
   Future<int?> getSavedConversationId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? x=prefs.getInt('conversationId');
@@ -190,6 +188,7 @@ print("====================================");
 
           don=true;
           showSecondAnimation=true;
+          load=true;
 
         });
       final response = await respons(text);
@@ -200,132 +199,169 @@ print("====================================");
     }
     // Speak out the response
   }
-
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-
-      endDrawer: NavBar(),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Center(child: Text('روبوت نوس')),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () async {
-            DatabaseHelper dbHelper = DatabaseHelper.instance;
-            int? latestConversationId = await dbHelper.getLatestConversationId();
-            // Navigate back to the previous screen
-            flutterTts.stop();
-            Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                    builder: (context) => ChatterScreen(conversationId:latestConversationId)));
-            },
-        ),),
-      body: Card(
-        margin: EdgeInsets.all(10),
-        child: Stack(
-          children: [
-            if (showSecondAnimation) //wev
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    width: 500.0,
-                    height: 300.0,
-                    child: Lottie.asset(wav),
-                  ),
-                ),
-              ),
-            if (don )//loop
-              Positioned(
-                top: 0,
-                left:-10,
-                right: -30,
-                child: Center(
-                  child: Container(
-                    width: 600.0,
-                    height: 500.0,
-                    child: Lottie.asset(roboy_loop),
-                  ),
-                ),
-              ),
-
-            // First Lottie animation (centered)
-            if (!showSecondAnimation)
-              Positioned(
-              top: 0,
-              left:-10,
-              right: -30,
-                child: GestureDetector(
-                onTap: () {
-                  print("object");
-
-                },
-              child: Center(
-                child: Container(
-                  width: 500.0,
-                  height: 500.0,
-                  child: Lottie.asset(robot),
-                ),
-              ),
-            )),
-
-            // GestureDetector for the second Lottie animation
-            // if(mic)
-            Positioned(
-              left: 140,
-              bottom: 90,
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    showSecondAnimation =!showSecondAnimation;
-                    don=!don;
-                    // mic=!mic;// Toggle the visibility of the second animation
-
-                  });
-                  _listen();
-
-                },
-                child: Container(
-                  width: 100.0,
-                  height: 100.0,
-                  child: Lottie.asset(microphon),
-                ),
-              ),
-            ),
-            if(!mic)
-              Positioned(
-                left: 110,
-                bottom: -30,
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      print("================");
-                      flutterTts.stop();
-                      setState(() {
-                        mic=!mic;
-
-                      });
-                      // mic=!mic;// Toggle the visibility of the second animation
-
-                    });
-
-                  },
-                  child: Container(
-                    width: 150.0,
-                    height: 150.0,
-                    child: Lottie.asset(stop),
-                  ),
-                ),
-              ),
-            // Second Lottie animation (displayed conditionally)
-
-          ],
+  Widget _buildProgressIndicator() {
+    return isProcessing
+        ? Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ThreeDotLoadingIndicator(
+          color: kOrangeColor, // You can change the color
+          size: 20.0, // And the size
         ),
       ),
-    );
+    )
+        : const SizedBox.shrink(); // Return an empty container when not processing
+  }
+  @override
+  Widget build(BuildContext context) {
+
+    return
+      Scaffold(
+
+        backgroundColor: const Color(0xFF0A0E21), // A deep blue color
+        appBar: AppBar(
+          backgroundColor: kLightDarkColor,
+          title: const Text(' المساعد الصوتي الذكي', style: TextStyle(color: Colors.orangeAccent)),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.orangeAccent),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          elevation: 0, // Removes the shadow under the app bar
+        ),
+        body: SafeArea(
+
+          child: Stack(
+            children:[
+
+              Positioned.fill(
+                child: Opacity(
+                  opacity: 0.3,
+                  child: Lottie.asset("assets/lotti/background_animation.json"),
+                ),
+              ),
+              Center(
+                child: Stack(
+                  children: [
+                    if(load)
+                      Positioned(child: _buildProgressIndicator()),
+                    if (_isListening) // Show listening related animations when _isListening is true
+                      ...[
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Container(
+                              width: 500.0,
+                              height: 300.0,
+                              child: Lottie.asset("assets/lotti/wav.json"),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Container(
+                              width: 400.0,
+                              height: 400.0,
+                              child: Lottie.asset("assets/lotti/bak.json"),
+                            ),
+                          ),
+                        ),
+
+                      ],
+                    if (!_isListening  )
+                      Positioned(
+                      left: 145,
+                      bottom: 10,
+                      child: GestureDetector(
+                        onTap: (){_listen();
+
+                          }, // Call the handler method,
+                        child: Container(
+                          width: 100.0,
+                          height: 100.0,
+                          child: Lottie.asset( "assets/lotti/microphon.json"),
+                        ),
+                      ),
+                    ),
+                    if (_isListening  )
+
+                      Positioned(
+                      left: 90,
+                      bottom: -20,
+                      child: GestureDetector(
+                        onTap: (){_listen();
+
+                        }, // Call the handler method,
+                        child: Container(
+                          width: 200.0,
+                          height: 200.0,
+                          child: Lottie.asset( "assets/lotti/stop.json" ),
+                        ),
+                      ),
+                    ),
+                    // Optionally, display the recognized text somewhere in your UI
+                    if (!_isListening  )
+                      Stack(
+                        children:[
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () {
+                              },
+                              child: Center(
+                                child: Container(
+                                  width: 400.0,
+                                  height: 400.0,
+                                  child: Lottie.asset("assets/lotti/bak.json"),
+                                ),
+                              ),
+                            ),
+                          ) ,
+                          if(_StopStream)
+                          Positioned(
+                          left: -72,
+                          right: -40,
+                          bottom: 80,
+                          child: GestureDetector(
+                            onTap: () {
+                              stopStreaming();
+                              _stopListening();
+                              flutterTts.stop();
+
+                              setState(() {
+                                _StopStream=false;
+                                load=false;
+
+                              });
+                            },
+                            child: Center(
+                              child: Container(
+                                width: 150.0,
+                                height: 150.0,
+                                child: Lottie.asset("assets/lotti/stop.json"),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        ]
+
+                      ) ,
+
+
+
+                  ],
+                ),
+              )],
+          ),
+        ),
+      );
   }
 }
