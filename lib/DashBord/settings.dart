@@ -25,7 +25,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _loadPreferences() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    // Load the saved indexes, if they exist, else default to 0
     int savedLanguageIndex = prefs.getInt('selectedLanguageIndex') ?? 0;
     int savedAnswerLengthIndex = prefs.getInt('selectedAnswerLengthIndex') ?? 0;
     setState(() {

@@ -5,6 +5,8 @@ import 'package:idea_chatbot/DashBord/style.dart';
 
 import 'package:flutter/material.dart';
 
+import '../../global/common/toast.dart';
+
 class ListViewpro extends StatelessWidget {
   const ListViewpro({
     Key? key,
@@ -106,7 +108,7 @@ class logout extends StatelessWidget {
       // Exit the app
       SystemNavigator.pop();
     } catch (e) {
-      print('Error logging out: $e');
+      showToast(message: "Error logging out");
     }
   }
 }

@@ -47,7 +47,6 @@ class _ConversationsListPageState extends State<ConversationsListPage> {
       return conversationsList;
     } catch (e) {
       // Handle any errors here
-      print('Error fetching conversations: $e');
       return [];
     }
   }

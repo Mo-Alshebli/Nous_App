@@ -40,6 +40,8 @@ dependencies:
   cupertino_icons: ^1.0.2
   flutter_svg: ^2.0.10+1
   get: ^4.6.6
+  openai_api: ^0.3.7
+
 
   chromadb: ^0.1.1
   http: ^1.2.0
@@ -86,11 +88,16 @@ dependencies:
   flutter_gemini: ^2.0.3
 
   dash_chat_2: ^0.0.20
+  audioplayers:
+  just_audio:
+  elevenlabs_flutter:
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
+  url_launcher: ^6.0.9
+  flutter_linkify: ^5.0.2
   flutter_lints: ^2.0.0
   flutter_onboarding_slider:
   flutter_signin_button: # For easy sign-in buttons

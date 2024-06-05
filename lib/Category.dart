@@ -35,7 +35,7 @@ class _MyPageState extends State<MyPage> {
   }
 
 
-  String? username="Mohammed";
+  Future<String?> username=getUserUser();
   final Future<List<String>> listData = getCategories();
   final GlobalKey<ScaffoldState> _key = GlobalKey(); // Create a key
 
@@ -56,12 +56,39 @@ class _MyPageState extends State<MyPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
                 children: [
-                  Text(
-                    " مــرحبـــا   "+username!,
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold),
+                  FutureBuilder<String?>(
+                    future: getUserUser(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Text('Loading...');
+                      } else {
+                        if (snapshot.hasError) {
+                          return Text('Error: ${snapshot.error}');
+                        } else {
+                          return Row(
+                            children: [
+                              Text(
+                                "مــرحـبـا ",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold),
+                          ),
+
+                              Text(
+                                snapshot.data ?? 'No Username',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold
+                                ),
+                              ),
+                            ],
+                          );
+
+                        }
+                      }
+                    },
                   ),
                   // CircleAvatar(
                   //   backgroundImage: AssetImage("assets/images/pr.jpg"),
@@ -158,7 +185,7 @@ class _MyPageState extends State<MyPage> {
                     child: Icon(
                       Icons.co_present_sharp, // Example icon, replace with your desired icon
                       color: Colors.black,
-                      size: 20,
+                      size: 23,
                     ),
                   ),
                   SizedBox(width: 80),

@@ -15,7 +15,6 @@ Future<String?> getUserUser()async {
   var username=await prefs.getString('username');
 
   User? user = FirebaseAuth.instance.currentUser;
-  print(user?.displayName);
   if (user?.displayName!=null){
     return user?.displayName;
 
@@ -63,7 +62,7 @@ Future<void> writeDataRealTime(var Human,ChatText,humantokens) async {
   String? idcom=await prefs.getString('company_id');
   String? num=await prefs.getString('num');
   int? conversationId = await prefs.getInt('conversationId');
-  ;
+
 
   DatabaseReference databaseRef = FirebaseDatabase.instance.ref('Messages/$idcom/$num/$conversationId');
   Map<String, dynamic> messagesData = {
@@ -236,7 +235,7 @@ Future<void> UserData() async {
   User? user = FirebaseAuth.instance.currentUser;
   bool emailFound = false;  // Flag to check if email is found
   var emai=user?.email;
-  var name=user?.displayName;
+  var name=await getUserUser();
   for (var email in emails) {
     if (email == emai) {
       showToast(message: "اهلا وسهلا بك مجددا");
@@ -257,7 +256,7 @@ Future<void> UserData() async {
       // Write the data in real time
       await databaseRef.set(userData);
     } catch (error) {
-      showToast(message: 'مشكلة اثناء كتابة البيانات الخاصة بلمستخدمين في قاعدة البيانات: $error');
+      showToast(message: 'تم إضافتك الى هذة الجهة  ');
     }
   }
 

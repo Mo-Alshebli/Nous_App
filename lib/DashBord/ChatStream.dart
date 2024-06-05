@@ -1,12 +1,13 @@
-import 'ReaitimeData.dart';
 import 'style.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:flutter/services.dart';
 import '../constants/image_string.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:flutter_tts/flutter_tts.dart';
-
+import 'package:audioplayers/audioplayers.dart';
+import 'package:url_launcher/url_launcher.dart';
 class ChatStream extends StatelessWidget {
   final List<Map<String, String>> messages;
   final Function(String) onDeleteMessage;
@@ -56,6 +57,7 @@ class MessageBubble extends StatefulWidget {
 
 class _MessageBubbleState extends State<MessageBubble> {
   bool _isListening = false;
+  late AudioPlayer player;
 
   @override
   void initState() {
@@ -64,6 +66,8 @@ class _MessageBubbleState extends State<MessageBubble> {
   }
 
   Future<void> _initializeTts() async {
+    player = AudioPlayer();
+    player.setReleaseMode(ReleaseMode.stop);
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     String? lang = prefs.getString('language') ;
 
@@ -128,12 +132,14 @@ class _MessageBubbleState extends State<MessageBubble> {
     if (text.isNotEmpty) {
       setState(() => _isListening = true);
       await widget.flutterTts.setSpeechRate(0.5);// Providing a default value
-
       await widget.flutterTts.speak(text);
 
     }
   }
-
+  Future<void> _launchURL(LinkableElement link) async {
+    final url = link.url.startsWith('http') ? link.url : 'http://${link.url}';
+    await launchUrl(Uri.parse(url));
+  }
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -226,14 +232,25 @@ class _MessageBubbleState extends State<MessageBubble> {
                             ),
                           ),
 
-                        Text(
-                          widget.msgText,
+                        Directionality(
                           textDirection: TextDirection.rtl,
+                          child: Linkify(
+                            onOpen: _launchURL,
+                            text: widget.msgText,
+                            style: TextStyle(
 
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontFamily: 'Lama',// Set the font family to Dubai
-                            color: widget.msgSender == "User" ? Colors.white70 : Colors.black87,
+                              fontSize: 14,
+                              fontFamily: 'Lama',
+                              color: widget.msgSender == "User" ? Colors.white70 : Colors.black87,
+                            ),
+                            linkifiers: [
+                              BitlyLinkifier(),
+                            ],
+                            linkStyle: TextStyle(
+                              color: Colors.cyanAccent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold, // Making the links bold
+                            ),
                           ),
                         ),
                       ],
@@ -253,5 +270,45 @@ class _MessageBubbleState extends State<MessageBubble> {
   void dispose() {
     widget.flutterTts.stop();
     super.dispose();
+    player.dispose();
+
+  }
+}
+
+
+
+class BitlyLinkifier extends Linkifier {
+  @override
+
+  List<LinkifyElement> parse(List<LinkifyElement> elements, LinkifyOptions options) {
+    final List<LinkifyElement> newElements = [];
+
+    final regex = RegExp(
+      r'(https?://[^\s]+|bit\.ly/[^\s]+)',
+      caseSensitive: false,
+    );
+    for (final element in elements) {
+      if (element is! TextElement) {
+        newElements.add(element);
+        continue;
+      }
+
+      final text = element.text;
+      int lastEnd = 0;
+
+      for (final match in regex.allMatches(text)) {
+        if (match.start > lastEnd) {
+          newElements.add(TextElement(text.substring(lastEnd, match.start)));
+        }
+        newElements.add(UrlElement(match.group(0)!));
+        lastEnd = match.end;
+      }
+
+      if (lastEnd < text.length) {
+        newElements.add(TextElement(text.substring(lastEnd)));
+      }
+    }
+
+    return newElements;
   }
 }

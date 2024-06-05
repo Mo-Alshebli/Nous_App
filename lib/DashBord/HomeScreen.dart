@@ -1,6 +1,4 @@
-
 import 'dart:convert';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -52,7 +50,6 @@ class _ChatterScreenState extends State<ChatterScreen> {
   String buffer = "";
   String colltext="";
   bool isTextFieldEnabled = true;
-
   String voictextbuffer = "";
   StreamSubscription? chatStreamSubscription;
   late stt.SpeechToText _speech;
@@ -148,6 +145,7 @@ class _ChatterScreenState extends State<ChatterScreen> {
       voictextbuffer = text;
       _isListening = false;
       isTranscribing = false;
+      isProcessing = true;
     });
     _sendMessageAfterSpeech();
   }
@@ -189,41 +187,24 @@ class _ChatterScreenState extends State<ChatterScreen> {
     });
   }
 
-
-  Future<Object?> Geminirespons(String inputText) async {
-    print(inputText);
-    try {
-      final gemini = Gemini.instance;
-      var response = await gemini.text(inputText);
-      return response;
-    } catch (e) {
-      print('Error handling text: $e');
-      return "";
-    }
-  }
-
   Future<Map<String, dynamic>> ModelName() async {
     DatabaseReference companytype = FirebaseDatabase.instance.ref('companyType');
     DataSnapshot snapshot = await companytype.get();
     if (snapshot.exists && snapshot.value is Map) {
-      print("==============================");
       return Map<String, dynamic>.from(snapshot.value as Map);
-      print("==============================");
 
     }else {
       showToast(message: 'The firebase is not allowed');
-      return {"id":"null"};
+      return {"id":"null","url":"null"};
     }
   }
   Future<String> resualt(userMessage) async {
     try {
-
-      final response = await respons(userMessage);
-      return response;
+      var response_ = await sendRequest(userMessage);
+      return response_["result"];
     } catch (e) {
       showToast(message: '$e .');
-      showToast(message: '$e .');
-      return '$e';
+      return 'خطاء في طلب من السيرفر تاكد من الانترنت';
     }
   }
 
@@ -321,6 +302,9 @@ class _ChatterScreenState extends State<ChatterScreen> {
 
 
   Future<void> startNewConversation() async {
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('startNewConversation', true);
     int newId = await dbHelper.createNewConversation();
     setState(() {
       setState(() {
@@ -357,20 +341,16 @@ class _ChatterScreenState extends State<ChatterScreen> {
       var response = await gemini.text(inputText);
       var d=response!.content!.parts!.last!.text;
       String text=convertToString(d);
-      // var decodedData = jsonDecode(response as String);
-      //
-      // // Access the nested text
-      // String text = decodedData['Candidates']['Content']['parts'][0]['text'];
-      //
-      // // Convert the response into the expected format
+
       List<String> words = text.split(' ');
-      print(words);
       // var content = [OpenAIChatCompletionChoiceMessageContentItemModel.text(response)];
       for (var item in words) {
         if (item != null) {
           // Process each character in the word
           for (var char in item.split('')) {
             buffer += char;
+            await Future.delayed(Duration(milliseconds: 10));
+
           }
 
           // After finishing the word, append a space to separate it from the next word
@@ -388,15 +368,48 @@ class _ChatterScreenState extends State<ChatterScreen> {
       }
       finalProcessing(usertext,text);
     } catch (e) {
-      print('Error handling text: $e');
       // Handle error by showing a toast or similar
       showToast(message: 'Error handling text: $e');
       setState(() => isProcessing = false); // Stop processing on error
     }
   }
+  Future<void> handleServer(String inputText,String usertext) async {
+    try {
 
-  // Process the response (common logic for both OpenAI and Gemini)
 
+
+      List<String> words = inputText.split(' ');
+      for (var item in words) {
+        if (item != null) {
+          // Process each character in the word
+          for (var char in item.split('')) {
+            buffer += char;
+            await Future.delayed(Duration(milliseconds: 10));
+
+
+          }
+
+          // After finishing the word, append a space to separate it from the next word
+          buffer += ' '; // Add a space after each word before appending it to the text
+
+          // Append the buffer to the text and update the state
+          if (buffer.isNotEmpty) {
+            appendText(buffer.trim()); // trim() is used to remove any trailing spaces just before appending
+            setState(() {
+              colltext += buffer;
+
+            });
+            buffer = ""; // Clear the buffer after adding to the colltext
+          }
+        }
+      }
+      finalProcessing(usertext,inputText);
+    } catch (e) {
+      // Handle error by showing a toast or similar
+      showToast(message: 'Error handling text: $e');
+      setState(() => isProcessing = false); // Stop processing on error
+    }
+  }
 
   // Function to add a message with a delay and handle response using the appropriate model.
   Future<void> addMessageWithDelay(String text, String usertext) async {
@@ -407,11 +420,13 @@ class _ChatterScreenState extends State<ChatterScreen> {
 
     var id = await ModelName();
     if (id["id"] == "gemini") {
-      print("[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]");
       await handleGemini(text,usertext);
-    } else {
-      print("[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]");
-      print(id);
+    }
+    else if (id["id"] == "server") {
+      await handleServer(text,usertext);
+    }
+    else {
+
       var userMessage = OpenAIChatCompletionChoiceMessageModel(
             content: [
               OpenAIChatCompletionChoiceMessageContentItemModel.text(text),
@@ -814,7 +829,7 @@ class _ChatterScreenState extends State<ChatterScreen> {
             size: 30,
           ),
           onPressed: () {
-            Navigator.of(context).push(MaterialPageRoute(builder: (context) => VoicChat()));
+            Navigator.of(context).push(MaterialPageRoute(builder: (context) => VoiceChat()));
             },
         ),
 

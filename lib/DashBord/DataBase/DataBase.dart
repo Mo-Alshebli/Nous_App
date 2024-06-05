@@ -74,7 +74,6 @@ class DatabaseHelper {
         whereArgs: [userMessage, chatbotMessage, conversationId],
       );
     } catch (e) {
-      print('Error in deleteMessagePair: $e');
       throw e; // rethrow the exception to handle it in the calling method
     }
   }
@@ -102,8 +101,7 @@ class DatabaseHelper {
   Future<int> insertMessage(Map<String, dynamic> message, int conversationId) async {
     Database db = await database;
     message[columnConversationId] = conversationId;
-    print("==================================cc");
-    print(conversationId);
+
     return await db.insert(tableMessages, message);
   }
   Future<String?> getFirstMessageForConversation(int conversationId) async {
@@ -139,9 +137,7 @@ class DatabaseHelper {
         whereArgs: [conversationId],
       );
 
-      print("Deleted conversation ID: $conversationId and all associated messages.");
     } catch (e) {
-      print('Error deleting conversation: $e');
       throw e; // Allow handling it outside this function
     }
   }

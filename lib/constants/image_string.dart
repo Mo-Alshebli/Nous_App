@@ -8,6 +8,7 @@ const String Login = "assets/images/Chat.png";
 const String sign = "assets/images/Chatsing.png";
 
 const  String icon="assets/images/icon.jpg";
+const  String stopicon="assets/images/stop.png";
 const String Googlelogo = "assets/images/google.png";
 const String tForgetPasswordImage = "assets/images/google.png";
 const String back_image = "assets/images/back.jpg";
